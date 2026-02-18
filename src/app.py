@@ -62,6 +62,18 @@ def signup_for_activity(activity_name: str, email: str):
     # Get the specific activity
     activity = activities[activity_name]
 
-    # Add student
-    activity["participants"].append(email)
-    return {"message": f"Signed up {email} for {activity_name}"}
+    # Validate email provided
+    if not email:
+        raise HTTPException(status_code=400, detail="Email is required")
+
+    # Validate student is not already signed up
+    if email in activity.get("participants", []):
+        raise HTTPException(status_code=400, detail="Student already signed up")
+
+    # Enforce max participants if configured
+    max_p = activity.get("max_participants")
+    if max_p is not None and len(activity.get("participants", [])) >= max_p:
+        raise HTTPException(status_code=400, detail="Activity is full")
+
+    activity.setdefault("participants", []).append(email)
+    return {"message": f"Signed up {email} for {activity_name}", "activity": activity}
